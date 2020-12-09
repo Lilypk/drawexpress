@@ -12,7 +12,7 @@ const app = express();
 const User = require('./user');
 
 mongoose.connect(
-	'mongodb+srv://tmarcelojr:admin@cluster0.ogumn.mongodb.net/<dbname>?retryWrites=true&w=majority',
+	'mongodb+srv://lily:Dance123!@cluster0.fhryo.mongodb.net/lily?retryWrites=true&w=majority',
 	{
 		useNewUrlParser: true,
 		useUnifiedTopology: true
@@ -66,6 +66,7 @@ app.post('/login', (req, res, next) => {
 });
 
 app.post('/register', (req, res) => {
+	console.log(req.body)
 	User.findOne({ username: req.body.username }, async (err, doc) => {
 		if (err) throw err;
 		if (doc) res.send('User Already Exists');
@@ -80,6 +81,11 @@ app.post('/register', (req, res) => {
 		}
 	});
 });
+app.get("/feed", (req, res) =>{
+    Feed.find({}).then(data => {
+        res.json(data)
+    })
+})
 
 // req.user stores the user
 // req object will not be a user object containing session data
