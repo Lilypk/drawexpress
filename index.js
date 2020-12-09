@@ -13,7 +13,7 @@ const User = require('./user');
 const Feed = require('./feed');
 const Canvas = require('./canvas');
 mongoose.connect(
-	'mongodb+srv://lily:Dance123!@cluster0.fhryo.mongodb.net/lily?retryWrites=true&w=majority',
+	'mongodb+srv://Lilypage:Dance123!@cluster0.cogqp.mongodb.net/draw?retryWrites=true&w=majority',
 	{
 		useNewUrlParser: true,
 		useUnifiedTopology: true
