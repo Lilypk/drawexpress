@@ -10,7 +10,8 @@ const bodyParser = require('body-parser');
 const { deserializeUser } = require('passport');
 const app = express();
 const User = require('./user');
-
+const Feed = require('./feed');
+const Canvas = require('./canvas');
 mongoose.connect(
 	'mongodb+srv://lily:Dance123!@cluster0.fhryo.mongodb.net/lily?retryWrites=true&w=majority',
 	{
@@ -81,8 +82,39 @@ app.post('/register', (req, res) => {
 		}
 	});
 });
+app.get("/user/login", (req, res) =>{
+    User.find({}).then(data => {
+        res.json(data)
+    })
+})
+app.get("/user/id", (req, res) =>{
+    User.find(req.body).then((data) => {
+        res.json(data)
+    })
+})
 app.get("/feed", (req, res) =>{
     Feed.find({}).then(data => {
+        res.json(data)
+    })
+})
+app.post("/canvas", (req, res) =>{
+    Canvas.create(req.body).then((data) => {
+        res.json(data)
+    })
+})
+app.put("/canvas/:id", (req, res) => {
+    Canvas.findOneAndUpdate({ _id: req.params.id }, req.body)
+    
+    .then(data => {
+        res.json(data)
+}).catch(error => {
+    res.json({error : 'could not update'})
+})
+
+})
+app.delete("/canvas/:id", (req, res) => {
+    Canvas.findOneAndDelete({ _id: req.params.id }, req.body)
+    .then(data => {
         res.json(data)
     })
 })
