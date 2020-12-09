@@ -51,6 +51,11 @@ require('./passportConfig')(passport)
 
 
 // Routes
+app.get('/', function (req, res) {
+	res.send('hello world')
+  })
+
+
 app.post('/login', (req, res, next) => {
   // use local strategy we defined
   passport.authenticate('local', (err, user, info) => {
@@ -124,4 +129,8 @@ app.delete("/canvas/:id", (req, res) => {
 // accessible throughout whole app
 app.get('/getUser', (req, res) => res.send(req.user));
 
-app.listen(4000, () => console.log('Server has started'));
+app.set("port", process.env.PORT || 4000);
+
+app.listen(app.get("port"), () => {
+  console.log(`✅ PORT: ${app.get("port")} 🌟`);
+});
