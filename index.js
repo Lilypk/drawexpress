@@ -26,7 +26,7 @@ mongoose.connect(
 // Need to set up CORS like this for auth to work
 app.use(
 	cors({
-		origin: 'http://localhost:3001',
+		origin: 'http://localhost:3000',
 		credentials: true
 	})
 );
@@ -83,7 +83,10 @@ app.post('/register', (req, res) => {
 				password: hashedPassword
 			});
 			await newUser.save();
-			res.send('User Created');
+			passport.authenticate('local', { successRedirect: '/feed',
+			failureRedirect: '/login' })
+
+			// res.send('User Created');
 		}
 	});
 });
