@@ -97,7 +97,7 @@ app.post('/register', (req, res) => {
 });
 
 app.get("/check", (req, res) => {
-	res.json(req.user)
+	res.json(req)
 })
 app.get("/user/login", (req, res) =>{
     User.find({}).then(data => {
