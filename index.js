@@ -95,6 +95,10 @@ app.post('/register', (req, res) => {
 		}
 	});
 });
+
+app.get("/check", (req, res) => {
+	res.json(req.session)
+})
 app.get("/user/login", (req, res) =>{
     User.find({}).then(data => {
         res.json(data)
