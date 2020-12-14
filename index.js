@@ -9,6 +9,7 @@ const session = require('express-session');
 const bodyParser = require('body-parser');
 const { deserializeUser } = require('passport');
 const app = express();
+
 const User = require('./user');
 const Feed = require('./feed');
 const Canvas = require('./canvas');
@@ -26,7 +27,8 @@ mongoose.connect(
 // Need to set up CORS like this for auth to work
 app.use(
 	cors({
-		origin: 'http://localhost:3000',
+    origin: 'http://localhost:3000',
+    methods: ['POST', 'PUT', 'GET', 'OPTIONS', 'HEAD'],
 		credentials: true
 	})
 );
