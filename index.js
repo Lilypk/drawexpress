@@ -116,7 +116,13 @@ app.get("/feed", (req, res) =>{
         res.json(data)
     })
 })
+app.get('/canvas', (req, res) =>{
+  Canvas.find({}).then(data => {
+    res.json(data)
+  })
+})
 app.post("/canvas", (req, res) =>{
+  console.log('were creating', req.body)
     Canvas.create(req.body).then((data) => {
         res.json(data)
     })
