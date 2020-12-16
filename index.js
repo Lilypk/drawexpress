@@ -1,116 +1,128 @@
 const mongoose = require('mongoose');
-const express = require('express');
-const cors = require('cors');
-const passport = require('passport');
-const passportlocal = require('passport-local').Strategy;
-const cookieParser = require('cookie-parser');
-const bcrypt = require('bcryptjs');
-const session = require('express-session');
+let app = require('express')();
+var cors = require('cors')
 const bodyParser = require('body-parser');
-const { deserializeUser } = require('passport');
-const app = express();
+let User = require("./user");
+const jwt = require('jwt-simple')
+let secret = "88d90dinlkjdk4";
+let Feed = require('./feed');
+let Canvas = require('./canvas');
 
-const User = require('./user');
-const Feed = require('./feed');
-const Canvas = require('./canvas');
-mongoose.connect(
-	'mongodb+srv://Lilypage:Dance123!@cluster0.cogqp.mongodb.net/draw?retryWrites=true&w=majority',
-	{
-		useNewUrlParser: true,
-		useUnifiedTopology: true
-	},
-	() => {
-		console.log('Mongoose is connected');
-	}
-);
-
-// Need to set up CORS like this for auth to work
-app.use(
-	cors({
-    origin: 'http://localhost:3000',
-    methods: ['POST', 'PUT', 'GET', 'OPTIONS', 'HEAD'],
-		credentials: true
-	})
-);
-app.use(function (req, res, next) 
-{	res.header("Access-Control-Allow-Methods", "POST,GET,PATCH,PUT,DELETE");	
-res.header(		"Access-Control-Allow-Headers",		"Origin, X-Requested-With, Content-Type, Accept"	);	
-res.header("Access-Control-Allow-Credentials", "true");	
-res.header("Access-Control-Allow-Origin", "http://localhost:3000");	next();});
-
-// Middleware
+app.use(cors());
+app.use(bodyParser.urlencoded());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(
-	session({
-		// We will use secret in our cookie-parser
-		secret: 'this will be our secret code',
-		resave: true,
-		saveUninitialized: true
-	})
-);
 
-// Pass in the actual value of secret
-app.use(cookieParser('this will be our secret code'));
-app.use(passport.initialize())
-app.use(passport.session())
-require('./passportConfig')(passport)
-
+function isAuthenticated(req, res, next) {
+  if(req.headers.authorization){
+      try{
+          console.log("User has token");
+          let token = req.headers.authorization.split("Bearer ")[1];
+          console.log(token);
+        let accessToken = jwt.decode(token, secret);
+        return next();
+      }catch(err){
+          console.log(err);
+          console.log("There is something wrong with your token");
+          res.sendStatus(401)
+      }
+  }else{
+      res.sendStatus(401)
+  }
+}
 
 // Routes
 app.get('/', function (req, res) {
 	res.send('hello world')
   })
 
-
-app.post('/login', (req, res, next) => {
-  // use local strategy we defined
-  passport.authenticate('local', (err, user, info) => {
-    if (err) throw err
-    if (!user) res.send('No User Exists')
-    else {
-      req.login(user, err => {
-        if (err) throw err
-        res.send('Successfully Authenticated')
-        console.log(req.user)
-      })
+  app.post('/signup', (req, res) => {
+    if (req.body.username && req.body.password) {
+      let newUser = {
+        username: req.body.username,
+        password: req.body.password
+      }
+      console.log(newUser);
+      User.findOne({ username: req.body.username })
+        .then((user) => {
+            console.log("29: ",user);
+          if (!user) {
+            console.log("creating new user")
+            User.create(newUser)
+              .then(user => {
+                if (user) {
+                  var payload = {
+                    id: newUser.id,
+                    userIsLoggedIn:true
+                  }
+                  var token = jwt.encode(payload, secret)
+                  res.json({
+                    token: token
+                  })
+                } else {
+                  res.sendStatus(401)
+                }
+              })
+          } else {
+            res.sendStatus(401)
+          }
+        })
+    } else {
+      res.sendStatus(401)
     }
-  })(req, res, next)
-});
-
-app.post('/register', (req, res) => {
-	console.log(req.body)
-	User.findOne({ username: req.body.username }, async (err, doc) => {
-		if (err) throw err;
-		if (doc) res.send('User Already Exists');
-		if (!doc) {
-      const hashedPassword = await bcrypt.hash(req.body.password, 10)
-			const newUser = new User({
-				username: req.body.username,
-				password: hashedPassword
-			});
-			await newUser.save();
-			passport.authenticate('local', { successRedirect: '/feed',
-			failureRedirect: '/login' })
-
-			// res.send('User Created');
-		}
-	});
-});
-
-app.get("/check", (req, res) => {
-	res.json(req)
+  })
+  app.post('/login', (req, res) => {
+    if (req.body.username && req.body.password) {
+      User.findOne({ username: req.body.username}).then(user => {
+        if (user) {
+            console.log(user.id);
+          if (user.password === req.body.password) {
+            var payload = {
+              id: user.id,
+              userIsLoggedIn:true,
+              access:"basic-user"
+            }
+            var token = jwt.encode(payload, secret)
+            res.json({
+              token: token,
+              loggedIn:true,
+              username:req.body.username
+            })
+          } else {
+            res.sendStatus(401)
+          }
+        } else {
+          res.sendStatus(401)
+        }
+      })
+    } else {
+      res.sendStatus(401)
+    }
+  })
+app.get('/logout', (req, res) => {
+    res.send({ hello: 'World' })
 })
-app.get("/user/login", (req, res) =>{
-    User.find({}).then(data => {
-        res.json(data)
-    })
-})
-app.get("/user/id", (req, res) =>{
-    User.find(req.body).then((data) => {
-        res.json(data)
-    })
-})
+app.get('/private', isAuthenticated,
+  (req, res) => {
+    res.json({loggedIn:true})
+  }
+);
+app.get('/user',
+  //connectEnsureLogin.ensureLoggedIn(),
+  (req, res) => res.send({user: req.user})
+);
+
+
+
+// app.get("/user/login", (req, res) =>{
+//     User.find({}).then(data => {
+//         res.json(data)
+//     })
+// })
+// app.get("/user/id", (req, res) =>{
+//     User.find(req.body).then((data) => {
+//         res.json(data)
+//     })
+// })
 app.get("/feed", (req, res) =>{
     Feed.find({}).then(data => {
         res.json(data)
@@ -143,14 +155,6 @@ app.delete("/canvas/:id", (req, res) => {
         res.json(data)
     })
 })
-
-// req.user stores the user
-// req object will not be a user object containing session data
-// accessible throughout whole app
-app.get('/getUser', (req, res) => res.send(req.user));
-
-app.set("port", process.env.PORT || 4000);
-
-app.listen(app.get("port"), () => {
-  console.log(`✅ PORT: ${app.get("port")} 🌟`);
-});
+app.listen(4000,()=>{
+  console.log('listening on 4000');
+})
